@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "project_name" {
   description = "Nombre del proyecto para etiquetar recursos"
   type        = string
-  default     = "aws-ha-webapp"
+  default     = "p01-webha"
 }
 
 variable "environment" {
