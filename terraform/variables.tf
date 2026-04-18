@@ -1,5 +1,5 @@
 variable "aws_region" {
-  description = "Región de AWS donde se desplegará la infraestructura"
+  description = "Region de AWS donde se desplegara la infraestructura"
   type        = string
   default     = "us-east-1"
 }
@@ -14,4 +14,10 @@ variable "environment" {
   description = "Ambiente de despliegue"
   type        = string
   default     = "dev"
+}
+
+variable "student" {
+  description = "Nombre del estudiante responsable"
+  type        = string
+  default     = "wassadenya"
 }
