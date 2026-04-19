@@ -1,7 +1,7 @@
 variable "project_name" {
   description = "Nombre del proyecto, usado como prefijo en todos los recursos"
   type        = string
-  default     = "aws-ha-webapp"
+  default     = "p01-webha"
 }
 
 variable "environment" {
