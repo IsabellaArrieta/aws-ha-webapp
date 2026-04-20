@@ -33,3 +33,18 @@ module "network" {
   private_subnet_cidrs = ["10.0.11.0/24", "10.0.12.0/24"]
   availability_zones   = ["us-east-1a", "us-east-1b"]
 }
+
+module "compute" {
+  source = "./modules/compute"
+
+  project_name       = var.project_name
+  environment        = var.environment
+  aws_region         = var.aws_region
+  vpc_id             = module.network.vpc_id
+  public_subnet_ids  = module.network.public_subnet_ids
+  private_subnet_ids = module.network.private_subnet_ids
+  instance_type      = "t3.micro"
+  asg_min_size       = 2
+  asg_desired_size   = 2
+  asg_max_size       = 6
+}

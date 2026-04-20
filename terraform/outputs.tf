@@ -1,3 +1,4 @@
+# ─── OUTPUTS DE RED (P1) ─────────────────────────────────────────────────────
 output "vpc_id" {
   description = "ID de la VPC"
   value       = module.network.vpc_id
@@ -21,4 +22,20 @@ output "internet_gateway_id" {
 output "nat_gateway_id" {
   description = "ID del NAT Gateway"
   value       = module.network.nat_gateway_id
+}
+
+# ─── OUTPUTS DE CÓMPUTO (P2) ─────────────────────────────────────────────────
+output "alb_dns_name" {
+  description = "DNS publico del ALB — URL de la aplicacion"
+  value       = module.compute.alb_dns_name
+}
+
+output "asg_name" {
+  description = "Nombre del Auto Scaling Group"
+  value       = module.compute.asg_name
+}
+
+output "target_group_arn" {
+  description = "ARN del Target Group"
+  value       = module.compute.target_group_arn
 }
