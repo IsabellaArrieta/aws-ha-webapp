@@ -195,11 +195,9 @@ terraform output
 terraform destroy
 ```
 
-## 10. Espacio para diagrama actualizado
+## 10. Diagrama actualizado
 
-```md
 ![Diagrama actualizado AWS HA WebApp](docs/Diagrama1.jpg)
-```
 
 ## 11. Evidencias del despliegue
 
