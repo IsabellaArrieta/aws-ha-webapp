@@ -1,4 +1,4 @@
-# ─── OUTPUTS DE RED (P1) ─────────────────────────────────────────────────────
+# ─── OUTPUTS DE RED ─────────────────────────────────────────────────────
 output "vpc_id" {
   description = "ID de la VPC"
   value       = module.network.vpc_id
@@ -24,7 +24,7 @@ output "nat_gateway_id" {
   value       = module.network.nat_gateway_id
 }
 
-# ─── OUTPUTS DE CÓMPUTO (P2) ─────────────────────────────────────────────────
+# ─── OUTPUTS DE CÓMPUTO ─────────────────────────────────────────────────
 output "alb_dns_name" {
   description = "DNS publico del ALB — URL de la aplicacion"
   value       = module.compute.alb_dns_name
@@ -38,4 +38,9 @@ output "asg_name" {
 output "target_group_arn" {
   description = "ARN del Target Group"
   value       = module.compute.target_group_arn
+}
+
+output "bastion_public_ip" {
+  description = "IP publica del Bastion Host"
+  value       = module.compute.bastion_public_ip
 }

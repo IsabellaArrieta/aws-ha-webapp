@@ -54,3 +54,15 @@ variable "asg_max_size" {
   type        = number
   default     = 6
 }
+
+variable "key_name" {
+  description = "Nombre del Key Pair para acceso SSH a las instancias EC2"
+  type        = string
+  default     = "p01-webha-key"
+}
+
+variable "bastion_allowed_ip" {
+  description = "Lista de IPs publicas permitidas para acceder al Bastion por SSH"
+  type        = list(string)
+  default     = []
+}

@@ -27,3 +27,8 @@ output "sg_ec2_id" {
   description = "ID del Security Group de los EC2"
   value       = aws_security_group.ec2.id
 }
+
+output "bastion_public_ip" {
+  description = "IP publica del Bastion Host"
+  value       = aws_instance.bastion.public_ip
+}

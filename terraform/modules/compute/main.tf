@@ -28,6 +28,14 @@ resource "aws_security_group" "alb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    description = "HTTPS desde internet"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -54,6 +62,14 @@ resource "aws_security_group" "ec2" {
     security_groups = [aws_security_group.alb.id]
   }
 
+  ingress {
+    description     = "SSH desde el Bastion"
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
+    security_groups = [aws_security_group.bastion.id]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -63,6 +79,32 @@ resource "aws_security_group" "ec2" {
 
   tags = {
     Name = "${var.project_name}-sg-ec2"
+  }
+}
+
+# ─── SECURITY GROUP: BASTION ─────────────────────────────────────────────────
+resource "aws_security_group" "bastion" {
+  name        = "${var.project_name}-sg-bastion"
+  description = "Security group para el Bastion Host"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    description = "SSH desde la IP del equipo"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [for ip in var.bastion_allowed_ip : "${ip}/32"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.project_name}-sg-bastion"
   }
 }
 
@@ -119,6 +161,7 @@ resource "aws_launch_template" "main" {
   name_prefix   = "${var.project_name}-lt-"
   image_id      = data.aws_ami.amazon_linux.id
   instance_type = var.instance_type
+  key_name      = var.key_name
 
   network_interfaces {
     associate_public_ip_address = false
@@ -176,5 +219,19 @@ resource "aws_autoscaling_policy" "cpu" {
       predefined_metric_type = "ASGAverageCPUUtilization"
     }
     target_value = 70.0
+  }
+}
+
+# ─── BASTION HOST ─────────────────────────────────────────────────────────────
+resource "aws_instance" "bastion" {
+  ami                         = data.aws_ami.amazon_linux.id
+  instance_type               = "t3.micro"
+  subnet_id                   = var.public_subnet_ids[0]
+  vpc_security_group_ids      = [aws_security_group.bastion.id]
+  key_name                    = var.key_name
+  associate_public_ip_address = true
+
+  tags = {
+    Name = "${var.project_name}-bastion"
   }
 }

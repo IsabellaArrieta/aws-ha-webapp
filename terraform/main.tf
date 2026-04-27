@@ -21,7 +21,7 @@ provider "aws" {
   }
 }
 
-# ─── MÓDULO DE RED (Santiago) ───────────────────────────────────────────────────────
+# ─── MÓDULO DE RED ───────────────────────────────────────────────────────
 module "network" {
   source = "./modules/network"
 
@@ -33,6 +33,8 @@ module "network" {
   private_subnet_cidrs = ["10.0.11.0/24", "10.0.12.0/24"]
   availability_zones   = ["us-east-1a", "us-east-1b"]
 }
+
+# ─── MÓDULO DE CÓMPUTO ───────────────────────────────────────────────────────
 
 module "compute" {
   source = "./modules/compute"
@@ -47,4 +49,6 @@ module "compute" {
   asg_min_size       = 2
   asg_desired_size   = 2
   asg_max_size       = 6
+  key_name           = "p01-webha-key"
+  bastion_allowed_ip = ["186.99.122.159"]
 }
