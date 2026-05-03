@@ -1,0 +1,10 @@
+---
+- name: Configurar servidores web de alta disponibilidad
+  hosts: webservers
+  become: true
+  gather_facts: true
+
+  roles:
+    - common
+    - webserver
+    - deploy

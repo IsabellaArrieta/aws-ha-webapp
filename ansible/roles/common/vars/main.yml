@@ -1,0 +1,8 @@
+---
+common_packages:
+  - curl
+  - wget
+  - unzip
+  - htop
+
+common_timezone: America/Bogota

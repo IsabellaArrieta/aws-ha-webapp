@@ -1,0 +1,5 @@
+---
+nginx_user: nginx
+nginx_html_dir: /usr/share/nginx/html
+nginx_conf_dir: /etc/nginx/conf.d
+nginx_log_dir: /var/log/nginx

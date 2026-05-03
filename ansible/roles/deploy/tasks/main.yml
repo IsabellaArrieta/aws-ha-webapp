@@ -1,0 +1,17 @@
+---
+- name: Crear directorio raiz de Nginx si no existe
+  file:
+    path: /usr/share/nginx/html
+    state: directory
+    owner: nginx
+    group: nginx
+    mode: "0755"
+
+- name: Desplegar aplicacion web desde template
+  template:
+    src: index.html.j2
+    dest: /usr/share/nginx/html/index.html
+    owner: nginx
+    group: nginx
+    mode: "0644"
+  notify: Restart Nginx

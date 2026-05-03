@@ -1,0 +1,5 @@
+---
+- name: Reboot server
+  reboot:
+    msg: "Reinicio requerido por actualizacion de paquetes"
+    reboot_timeout: 300

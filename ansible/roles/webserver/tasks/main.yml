@@ -1,0 +1,33 @@
+---
+- name: Instalar Nginx
+  dnf:
+    name: nginx
+    state: present
+
+- name: Copiar configuracion de Nginx
+  copy:
+    src: nginx.conf
+    dest: /etc/nginx/conf.d/webapp.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Nginx
+
+- name: Eliminar configuracion por defecto de Nginx
+  file:
+    path: /etc/nginx/conf.d/default.conf
+    state: absent
+  notify: Restart Nginx
+
+- name: Asegurar que Nginx esta iniciado y habilitado
+  service:
+    name: nginx
+    state: started
+    enabled: true
+
+- name: Configurar firewall para permitir HTTP
+  firewalld:
+    service: http
+    permanent: true
+    state: enabled
+  notify: Reload Firewall

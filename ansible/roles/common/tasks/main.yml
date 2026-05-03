@@ -1,0 +1,25 @@
+---
+- name: Actualizar todos los paquetes del sistema
+  dnf:
+    name: "*"
+    state: latest
+    update_cache: true
+
+- name: Instalar paquetes utilitarios
+  dnf:
+    name:
+      - curl
+      - wget
+      - unzip
+      - htop
+    state: present
+
+- name: Configurar timezone a Bogota
+  timezone:
+    name: America/Bogota
+
+- name: Asegurar que el servicio chrony esta activo
+  service:
+    name: chronyd
+    state: started
+    enabled: true

@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AWS HA WebApp — wassadenya</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0e1a;
+      --surface:   #111827;
+      --border:    #1e2a3a;
+      --accent:    #00d4aa;
+      --accent2:   #3b82f6;
+      --warn:      #f59e0b;
+      --text:      #e2e8f0;
+      --muted:     #64748b;
+      --mono:      'Space Mono', monospace;
+      --sans:      'DM Sans', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── GRID DE FONDO ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,212,170,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,170,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      padding: 0 48px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── HEADER ── */
+    header {
+      padding: 48px 0 32px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .logo {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--accent);
+      background: rgba(0,212,170,0.08);
+      border: 1px solid rgba(0,212,170,0.2);
+      border-radius: 20px;
+      padding: 6px 14px;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    h1 {
+      font-family: var(--mono);
+      font-size: clamp(26px, 5vw, 42px);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    h1 span { color: var(--accent); }
+
+    .subtitle {
+      margin-top: 12px;
+      font-size: 16px;
+      color: var(--muted);
+      font-weight: 300;
+      max-width: 560px;
+    }
+
+    /* ── SERVIDOR ACTUAL ── */
+    .server-card {
+      margin: 32px 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      animation: fadein 0.6s ease both;
+    }
+
+    @keyframes fadein {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .server-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 4px;
+    }
+
+    .server-name {
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .server-meta {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .meta-item { text-align: right; }
+
+    .meta-item .server-label { text-align: right; }
+
+    .meta-value {
+      font-family: var(--mono);
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    /* ── SECCIÓN GENERAL ── */
+    section { padding: 48px 0; border-bottom: 1px solid var(--border); }
+
+    .section-tag {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 8px;
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 24px;
+    }
+
+    /* ── GRID DE TARJETAS ── */
+    .grid { display: grid; gap: 16px; }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      animation: fadein 0.5s ease both;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .card-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .icon-green  { background: rgba(0,212,170,0.12); }
+    .icon-blue   { background: rgba(59,130,246,0.12); }
+    .icon-yellow { background: rgba(245,158,11,0.12); }
+
+    .card-title {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .card-body {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .card-body strong { color: var(--text); font-weight: 500; }
+
+    /* ── LISTA DE RECURSOS ── */
+    .resource-list { list-style: none; }
+
+    .resource-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .resource-list li:last-child { border-bottom: none; }
+
+    .check {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(0,212,170,0.15);
+      border: 1px solid rgba(0,212,170,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 10px;
+      color: var(--accent);
+    }
+
+    .resource-name { color: var(--text); flex: 1; }
+    .resource-detail { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+    /* ── PRÓXIMAMENTE ── */
+    .coming-soon {
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .coming-soon::after {
+      content: 'PRÓXIMAMENTE';
+      position: absolute;
+      top: 14px;
+      right: -24px;
+      background: var(--warn);
+      color: #000;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 3px 36px;
+      transform: rotate(45deg);
+    }
+
+    .coming-soon .card-title { color: var(--muted); }
+    .coming-soon .card-body  { color: #3a4a5a; }
+
+    /* ── STACK TÉCNICO ── */
+    .tech-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .tech-pill {
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: var(--surface);
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .tech-pill:hover { border-color: var(--accent); color: var(--accent); }
+    .tech-pill.active { border-color: var(--accent); color: var(--accent); background: rgba(0,212,170,0.08); }
+    .tech-pill.pending { border-color: var(--warn); color: var(--warn); background: rgba(245,158,11,0.06); }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 32px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    footer p {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    footer span { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-top">
+      <div class="logo">// aws-ha-webapp</div>
+      <div class="status-badge">
+        <div class="dot"></div>
+        Sistema operativo
+      </div>
+    </div>
+    <h1>Aplicación Web de<br><span>Alta Disponibilidad</span></h1>
+    <p class="subtitle">
+      Infraestructura multi-AZ en AWS con balanceo de carga automático,
+      escalado por CPU y configuración gestionada como código.
+    </p>
+  </header>
+
+  <!-- SERVIDOR ACTUAL -->
+  <div class="server-card">
+    <div>
+      <div class="server-label">Servidor respondiendo</div>
+      <div class="server-name">{{ ansible_hostname }}</div>
+    </div>
+    <div class="server-meta">
+      <div class="meta-item">
+        <div class="server-label">Región</div>
+        <div class="meta-value">us-east-1</div>
+      </div>
+      <div class="meta-item">
+        <div class="server-label">Entorno</div>
+        <div class="meta-value">dev</div>
+      </div>
+      <div class="meta-item">
+        <div class="server-label">Instancia</div>
+        <div class="meta-value">t3.micro</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARQUITECTURA -->
+  <section>
+    <div class="section-tag">// arquitectura</div>
+    <h2>Cómo funciona el sistema</h2>
+    <div class="grid grid-2">
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon icon-green">&#9632;</div>
+          <div class="card-title">Capa de red</div>
+        </div>
+        <div class="card-body">
+          VPC privada con CIDR <strong>10.0.0.0/16</strong> distribuida en
+          dos zonas de disponibilidad. Subnets públicas para el balanceador
+          y privadas para los servidores. NAT Gateway para salida segura
+          a internet desde las instancias privadas.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon icon-blue">&#9632;</div>
+          <div class="card-title">Balanceo de carga</div>
+        </div>
+        <div class="card-body">
+          Application Load Balancer expuesto en subnets públicas distribuye
+          el tráfico entrante entre las instancias disponibles. Health checks
+          cada <strong>30 segundos</strong> detectan servidores caídos
+          y los retiran automáticamente.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon icon-green">&#9632;</div>
+          <div class="card-title">Escalado automático</div>
+        </div>
+        <div class="card-body">
+          Auto Scaling Group mantiene entre <strong>2 y 6 instancias</strong>
+          según la demanda. Si el CPU promedio supera el <strong>70%</strong>
+          durante dos minutos, se lanza una instancia adicional
+          automáticamente sin intervención manual.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon icon-blue">&#9632;</div>
+          <div class="card-title">Alta disponibilidad</div>
+        </div>
+        <div class="card-body">
+          Los recursos están distribuidos en <strong>us-east-1a</strong>
+          y <strong>us-east-1b</strong>. Si un centro de datos falla
+          completamente, el sistema sigue operando desde la otra zona
+          sin interrupciones visibles para el usuario.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- RECURSOS DESPLEGADOS -->
+  <section>
+    <div class="section-tag">// infraestructura</div>
+    <h2>Recursos desplegados en AWS</h2>
+    <div class="grid grid-2">
+
+      <div class="card">
+        <div class="card-title" style="margin-bottom: 14px; font-size: 12px; color: var(--muted);">MÓDULO DE RED</div>
+        <ul class="resource-list">
+          <li><span class="check">&#10003;</span><span class="resource-name">VPC</span><span class="resource-detail">10.0.0.0/16</span></li>
+          <li><span class="check">&#10003;</span><span class="resource-name">Subnets públicas</span><span class="resource-detail">x2 AZ</span></li>
+          <li><span class="check">&#10003;</span><span class="resource-name">Subnets privadas</span><span class="resource-detail">x2 AZ</span></li>
+          <li><span class="check">&#10003;</span><span class="resource-name">Internet Gateway</span><span class="resource-detail">igw</span></li>
+          <li><span class="check">&#10003;</span><span class="resource-name">NAT Gateway</span><span class="resource-detail">+ EIP</span></li>
+          <li><span class="check">&#10003;</span><span class="resource-name">Route Tables</span><span class="resource-detail">pública + privada</span></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="margin-bottom: 14px; font-size: 12px; color: var(--muted);">MÓDULO DE CÓMPUTO</div>
+        <ul class="resource-list">
+          <li><span class="check">&#10003;</span><span class="resource-name">Application Load Balancer</span><span class="resource-detail">multi-AZ</span></li>
+          <li><span class="check">&#10003;</span><span class="resource-name">Target Group</span><span class="resource-detail">HTTP:80</span></li>
+          <li><span class="check">&#10003;</span><span class="resource-name">Security Groups</span><span class="resource-detail">ALB + EC2</span></li>
+          <li><span class="check">&#10003;</span><span class="resource-name">Launch Template</span><span class="resource-detail">AL2023</span></li>
+          <li><span class="check">&#10003;</span><span class="resource-name">Auto Scaling Group</span><span class="resource-detail">2–6 instancias</span></li>
+          <li><span class="check">&#10003;</span><span class="resource-name">Política de escalado</span><span class="resource-detail">CPU > 70%</span></li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- STACK Y PRÓXIMAMENTE -->
+  <section>
+    <div class="section-tag">// stack técnico</div>
+    <h2>Herramientas del proyecto</h2>
+
+    <div class="tech-grid" style="margin-bottom: 32px;">
+      <span class="tech-pill active">Terraform</span>
+      <span class="tech-pill active">AWS EC2</span>
+      <span class="tech-pill active">AWS ALB</span>
+      <span class="tech-pill active">AWS VPC</span>
+      <span class="tech-pill active">AWS Auto Scaling</span>
+      <span class="tech-pill active">AWS S3</span>
+      <span class="tech-pill active">AWS DynamoDB</span>
+      <span class="tech-pill active">Nginx</span>
+      <span class="tech-pill pending">Ansible ↗</span>
+      <span class="tech-pill pending">GitHub Actions ↗</span>
+      <span class="tech-pill pending">Route 53 ↗</span>
+    </div>
+
+    <div class="grid grid-2">
+
+      <div class="coming-soon card">
+        <div class="card-header">
+          <div class="card-icon icon-yellow">&#9632;</div>
+          <div class="card-title">Automatización con Ansible</div>
+        </div>
+        <div class="card-body">
+          Roles para configuración idempotente de servidores:
+          instalación de Nginx, despliegue de la aplicación
+          e inventario dinámico por etiquetas EC2.
+        </div>
+      </div>
+
+      <div class="coming-soon card">
+        <div class="card-header">
+          <div class="card-icon icon-yellow">&#9632;</div>
+          <div class="card-title">Pipeline CI/CD</div>
+        </div>
+        <div class="card-body">
+          GitHub Actions con jobs de validación, plan, apply
+          y configuración automática. Cada merge a main
+          despliega la infraestructura sin intervención manual.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>Equipo <span>wassadenya</span> &mdash; Proyecto 01 &mdash; IaC &amp; DevOps</p>
+    <p>Ingeniería de Sistemas y Computación &mdash; <span>8vo semestre</span></p>
+  </footer>
+
+</div>
+
+</body>
+</html>

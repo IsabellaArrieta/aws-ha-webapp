@@ -1,0 +1,7 @@
+---
+env: prod
+nginx_worker_processes: auto
+nginx_worker_connections: 1024
+app_version: "1.0.0"
+project_name: p01-webha
+aws_region: us-east-1
