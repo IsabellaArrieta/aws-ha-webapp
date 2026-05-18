@@ -8,7 +8,6 @@
 - name: Instalar paquetes utilitarios
   dnf:
     name:
-      - curl
       - wget
       - unzip
       - htop

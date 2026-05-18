@@ -25,6 +25,17 @@
     state: started
     enabled: true
 
+- name: Instalar firewalld
+  dnf:
+    name: firewalld
+    state: present
+
+- name: Asegurar que firewalld esta en ejecucion
+  service:
+    name: firewalld
+    state: started
+    enabled: true
+    
 - name: Configurar firewall para permitir HTTP
   firewalld:
     service: http

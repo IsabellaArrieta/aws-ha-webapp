@@ -50,5 +50,5 @@ module "compute" {
   asg_desired_size   = 2
   asg_max_size       = 6
   key_name           = "p01-webha-key"
-  bastion_allowed_ip = ["186.99.122.159"]
+  bastion_allowed_ip = ["186.116.80.228"]
 }

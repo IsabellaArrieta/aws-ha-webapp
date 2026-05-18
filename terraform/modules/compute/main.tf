@@ -126,6 +126,12 @@ resource "aws_lb_target_group" "main" {
     interval            = 30
   }
 
+  stickiness {
+    type            = "lb_cookie"
+    cookie_duration = 86400
+    enabled         = true
+  }
+
   tags = {
     Name = "${var.project_name}-tg"
   }
@@ -181,7 +187,9 @@ resource "aws_launch_template" "main" {
   tag_specifications {
     resource_type = "instance"
     tags = {
-      Name = "${var.project_name}-ec2"
+      Name        = "${var.project_name}-ec2"
+      Environment = var.environment
+      Project     = var.project_name
     }
   }
 }
@@ -205,6 +213,7 @@ resource "aws_autoscaling_group" "main" {
     key                 = "Name"
     value               = "${var.project_name}-ec2"
     propagate_at_launch = true
+
   }
 }
 
