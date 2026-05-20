@@ -28,9 +28,9 @@ module "network" {
   project_name         = var.project_name
   environment          = var.environment
   aws_region           = var.aws_region
-  vpc_cidr             = "10.0.0.0/16"
-  public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
-  private_subnet_cidrs = ["10.0.11.0/24", "10.0.12.0/24"]
+  vpc_cidr             = "10.50.0.0/16"
+  public_subnet_cidrs  = ["10.50.1.0/24", "10.50.2.0/24"]
+  private_subnet_cidrs = ["10.50.11.0/24", "10.50.12.0/24"]
   availability_zones   = ["us-east-1a", "us-east-1b"]
 }
 
