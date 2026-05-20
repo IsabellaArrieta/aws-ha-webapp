@@ -245,8 +245,10 @@ Esta evidencia demuestra redundancia minima operativa y capacidad inicial de con
 
 ### 12.5 Prueba del ALB
 
-![Prueba funcional del ALB](docs/ALB-proof.jpeg)
+![Prueba funcional del ALB](docs/ALB-proof-1.png)
 
-La URL publica del ALB responde correctamente con la pagina de Nginx (`Hola desde ...`), confirmando que el trafico llega a las instancias de backend.
+La URL publica del ALB responde correctamente con la pagina de Nginx, confirmando que el trafico llega a las instancias de backend. Si se entra desde otro dispositivo, o incluso desde incognito. Te redirige a la otra instancia disponible.
+
+![Prueba funcional del ALB 2](docs/ALB-proof-2.png)
 
 Esta evidencia valida el flujo end-to-end desde Internet hasta la capa de aplicacion.
