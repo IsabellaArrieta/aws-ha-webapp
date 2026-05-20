@@ -145,64 +145,58 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > /home/runner/.ssh/p01-webha-key
           chmod 600 /home/runner/.ssh/p01-webha-key
 
-      - name: Instalar dependencias de Ansible
+      - name: Instalar dependencias
         run: pip install ansible boto3 botocore
 
-      - name: Autorizar IP del Runner en el Bastion SG
-        id: whitelist-ip
+      - name: Autorizar IP del Runner
         run: |
           RUNNER_IP=$(curl -s https://checkip.amazonaws.com)
           echo "RUNNER_IP=$RUNNER_IP" >> $GITHUB_ENV
-          echo "Inyectando la IP: $RUNNER_IP al Security Group..."
           aws ec2 authorize-security-group-ingress \
             --group-id ${{ secrets.BASTION_SG_ID }} \
             --protocol tcp \
             --port 22 \
             --cidr $RUNNER_IP/32
 
-      - name: Obtener IP del Bastion y crear SSH Config
+      - name: Obtener IP del Bastion y crear ansible.cfg limpio
         run: |
+          # 1. Obtener IP
           BASTION_IP=$(aws ec2 describe-instances \
             --filters "Name=instance.group-id,Values=${{ secrets.BASTION_SG_ID }}" "Name=instance-state-name,Values=running" \
             --query "Reservations[0].Instances[0].PublicIpAddress" \
             --output text)
             
           if [ "$BASTION_IP" == "None" ] || [ -z "$BASTION_IP" ]; then
-            echo "Error: No se encontró un Bastion corriendo."
+            echo "Error: No se encontró Bastion."
             exit 1
           fi
-          echo "La IP actual del Bastion es: $BASTION_IP"
           
-          # Creando la configuración con rutas ABSOLUTAS
-          cat <<EOF > /home/runner/.ssh/config
-          Host bastion
-            HostName $BASTION_IP
-            User ec2-user
-            IdentityFile /home/runner/.ssh/p01-webha-key
-            StrictHostKeyChecking no
+          # 2. Sobreescribir el archivo conflictivo por uno 100% dinámico
+          cat <<EOF > ansible.cfg
+          [defaults]
+          inventory = inventory.aws_ec2.yml
+          remote_user = ec2-user
+          private_key_file = /home/runner/.ssh/p01-webha-key
+          host_key_checking = False
+          stdout_callback = default
+          deprecation_warnings = False
 
-          Host 10.0.*
-            User ec2-user
-            IdentityFile /home/runner/.ssh/p01-webha-key
-            StrictHostKeyChecking no
-            ProxyJump bastion
+          [ssh_connection]
+          ssh_args = -o StrictHostKeyChecking=no -o ProxyCommand="ssh -W %h:%p -i /home/runner/.ssh/p01-webha-key -o StrictHostKeyChecking=no ec2-user@$BASTION_IP"
+          pipelining = True
           EOF
-          chmod 600 /home/runner/.ssh/config
-
-      - name: Esperar a que EC2 inicialice SSH
-        run: sleep 30
+          
+          # Pausa de seguridad para que la regla de red en AWS haga efecto
+          sleep 10
+        working-directory: ./ansible
 
       - name: Ejecutar Ansible Playbook
-        env:
-          # Pasando la ruta absoluta al argumento de Ansible
-          ANSIBLE_SSH_ARGS: "-F /home/runner/.ssh/config -o ControlMaster=auto -o ControlPersist=60s"
         run: ansible-playbook playbook.yml
         working-directory: ./ansible
 
-      - name: Revocar IP del Runner del Bastion SG
+      - name: Revocar IP del Runner
         if: always()
         run: |
-          echo "Removiendo la IP: ${{ env.RUNNER_IP }} del Security Group..."
           aws ec2 revoke-security-group-ingress \
             --group-id ${{ secrets.BASTION_SG_ID }} \
             --protocol tcp \
