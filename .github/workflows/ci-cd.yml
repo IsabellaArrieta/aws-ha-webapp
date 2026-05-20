@@ -141,9 +141,9 @@ jobs:
 
       - name: Configurar llave SSH
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/p01-webha-key
-          chmod 600 ~/.ssh/p01-webha-key
+          mkdir -p /home/runner/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > /home/runner/.ssh/p01-webha-key
+          chmod 600 /home/runner/.ssh/p01-webha-key
 
       - name: Instalar dependencias de Ansible
         run: pip install ansible boto3 botocore
@@ -162,7 +162,6 @@ jobs:
 
       - name: Obtener IP del Bastion y crear SSH Config
         run: |
-          # 1. Obtener la IP del Bastion
           BASTION_IP=$(aws ec2 describe-instances \
             --filters "Name=instance.group-id,Values=${{ secrets.BASTION_SG_ID }}" "Name=instance-state-name,Values=running" \
             --query "Reservations[0].Instances[0].PublicIpAddress" \
@@ -174,29 +173,29 @@ jobs:
           fi
           echo "La IP actual del Bastion es: $BASTION_IP"
           
-          # 2. Crear archivo nativo de configuración SSH (El método definitivo)
-          cat <<EOF > ~/.ssh/config
+          # Creando la configuración con rutas ABSOLUTAS
+          cat <<EOF > /home/runner/.ssh/config
           Host bastion
             HostName $BASTION_IP
             User ec2-user
-            IdentityFile ~/.ssh/p01-webha-key
+            IdentityFile /home/runner/.ssh/p01-webha-key
             StrictHostKeyChecking no
 
           Host 10.0.*
             User ec2-user
-            IdentityFile ~/.ssh/p01-webha-key
+            IdentityFile /home/runner/.ssh/p01-webha-key
             StrictHostKeyChecking no
             ProxyJump bastion
           EOF
-          chmod 600 ~/.ssh/config
+          chmod 600 /home/runner/.ssh/config
 
-      - name: Esperar a que EC2 inicialice SSH (Prevención de race conditions)
+      - name: Esperar a que EC2 inicialice SSH
         run: sleep 30
 
       - name: Ejecutar Ansible Playbook
         env:
-          # Obligamos a Ansible a ignorar su ansible.cfg y usar la configuración nativa de Linux que creamos arriba
-          ANSIBLE_SSH_ARGS: "-F ~/.ssh/config -o ControlMaster=auto -o ControlPersist=60s"
+          # Pasando la ruta absoluta al argumento de Ansible
+          ANSIBLE_SSH_ARGS: "-F /home/runner/.ssh/config -o ControlMaster=auto -o ControlPersist=60s"
         run: ansible-playbook playbook.yml
         working-directory: ./ansible
 
