@@ -151,38 +151,41 @@ jobs:
       - name: Autorizar IP del Runner en el Bastion SG
         id: whitelist-ip
         run: |
-          # 1. Obtener la IP pública del runner de GitHub
           RUNNER_IP=$(curl -s https://checkip.amazonaws.com)
           echo "RUNNER_IP=$RUNNER_IP" >> $GITHUB_ENV
           echo "Inyectando la IP: $RUNNER_IP al Security Group..."
-          
-          # 2. Agregar la regla al Security Group en AWS
           aws ec2 authorize-security-group-ingress \
             --group-id ${{ secrets.BASTION_SG_ID }} \
             --protocol tcp \
             --port 22 \
             --cidr $RUNNER_IP/32
 
-      - name: Obtener IP del Bastion y actualizar ansible.cfg
+      - name: Obtener IP del Bastion
         run: |
-          # 1. Buscar la IP pública de la instancia que tiene el SG del Bastion
+          # Obtenemos la IP pública del Bastion
           BASTION_IP=$(aws ec2 describe-instances \
             --filters "Name=instance.group-id,Values=${{ secrets.BASTION_SG_ID }}" "Name=instance-state-name,Values=running" \
             --query "Reservations[0].Instances[0].PublicIpAddress" \
             --output text)
           
-          echo "La IP actual del Bastion es: $BASTION_IP"
+          # Validación por si AWS no devuelve nada
+          if [ "$BASTION_IP" == "None" ] || [ -z "$BASTION_IP" ]; then
+            echo "Error: No se encontró un Bastion corriendo con ese Security Group."
+            exit 1
+          fi
           
-          # 2. Reemplazar el placeholder en el ansible.cfg con la IP real
-          sed -i "s/BASTION_PUBLIC_IP/$BASTION_IP/g" ansible.cfg
-        working-directory: ./ansible
+          echo "La IP actual del Bastion es: $BASTION_IP"
+          echo "BASTION_IP=$BASTION_IP" >> $GITHUB_ENV
 
       - name: Ejecutar Ansible Playbook
+        env:
+          # Esta variable sobreescribe la configuración de tu ansible.cfg forzando la IP dinámica
+          ANSIBLE_SSH_ARGS: "-o StrictHostKeyChecking=no -o ProxyCommand=\"ssh -W %h:%p -i ~/.ssh/p01-webha-key -o StrictHostKeyChecking=no ec2-user@${{ env.BASTION_IP }}\""
         run: ansible-playbook playbook.yml
         working-directory: ./ansible
 
       - name: Revocar IP del Runner del Bastion SG
-        if: always() # Garantiza que se ejecute aunque el paso de Ansible falle
+        if: always()
         run: |
           echo "Removiendo la IP: ${{ env.RUNNER_IP }} del Security Group..."
           aws ec2 revoke-security-group-ingress \
