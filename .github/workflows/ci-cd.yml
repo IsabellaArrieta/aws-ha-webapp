@@ -159,6 +159,20 @@ jobs:
             --port 22 \
             --cidr $RUNNER_IP/32
 
+      - name: Obtener IP del Bastion y actualizar ansible.cfg
+        run: |
+          # 1. Buscar la IP pública de la instancia que tiene el SG del Bastion
+          BASTION_IP=$(aws ec2 describe-instances \
+            --filters "Name=instance.group-id,Values=${{ secrets.BASTION_SG_ID }}" "Name=instance-state-name,Values=running" \
+            --query "Reservations[0].Instances[0].PublicIpAddress" \
+            --output text)
+          
+          echo "La IP actual del Bastion es: $BASTION_IP"
+          
+          # 2. Reemplazar el placeholder en el ansible.cfg con la IP real
+          sed -i "s/BASTION_PUBLIC_IP/$BASTION_IP/g" ansible.cfg
+        working-directory: ./ansible
+
       - name: Ejecutar Ansible Playbook
         run: ansible-playbook playbook.yml
         working-directory: ./ansible
