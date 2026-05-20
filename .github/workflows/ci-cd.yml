@@ -43,7 +43,9 @@ jobs:
         working-directory: ./terraform
 
       - name: Run TFLint
-        run: tflint
+        run: |
+          tflint --init
+          tflint
         working-directory: ./terraform
 
   # ─── JOB 2: PLAN ──────────────────────────────────────────────────
