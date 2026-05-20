@@ -52,7 +52,7 @@ variable "asg_desired_size" {
 variable "asg_max_size" {
   description = "Numero maximo de instancias en el ASG"
   type        = number
-  default     = 6
+  default     = 5
 }
 
 variable "key_name" {
